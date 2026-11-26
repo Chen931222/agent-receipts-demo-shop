@@ -2,12 +2,29 @@
  * Refunds for paid orders.
  *
  * An order looks like { id, total, currency, refunded } where amounts are integer cents.
- * Today only full refunds exist: refund(order) gives the customer back the whole total.
+ * refund(order, amount) gives the customer back `amount` cents, or everything that
+ * remains when `amount` is omitted. Partial refunds add up in `order.refunded` until
+ * nothing remains; after that any further refund throws. The input order is never
+ * mutated: a new order object is returned.
  */
 
-export function refund(order) {
-  if (order.refunded > 0) throw new Error(`Order ${order.id} was already refunded`);
-  return { ...order, refunded: order.total };
+export function refund(order, amount) {
+  const left = remaining(order);
+  if (left <= 0) throw new Error(`Order ${order.id} was already refunded`);
+
+  const value = amount === undefined ? left : amount;
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(
+      `Refund amount for order ${order.id} must be a positive integer number of cents, got ${String(amount)}`,
+    );
+  }
+  if (value > left) {
+    throw new Error(
+      `Refund amount ${value} exceeds the ${left} cents remaining on order ${order.id}`,
+    );
+  }
+
+  return { ...order, refunded: order.refunded + value };
 }
 
 export function remaining(order) {
