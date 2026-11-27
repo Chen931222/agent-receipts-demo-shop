@@ -58,6 +58,16 @@ describe("partial refunds", () => {
     },
   );
 
+  it("refuses refunds for cancelled orders", () => {
+    const cancelled = { ...order(), status: "cancelled" };
+    expect(() => refund(cancelled)).toThrow(/cancelled/);
+    expect(() => refund(cancelled, 100)).toThrow(/cancelled/);
+  });
+
+  it("still refunds orders with another status", () => {
+    expect(refund({ ...order(), status: "paid" }, 100).refunded).toBe(100);
+  });
+
   it("does not mutate the input order", () => {
     const original = order();
     const after = refund(original, 1000);

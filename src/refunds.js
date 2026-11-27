@@ -5,10 +5,14 @@
  * refund(order, amount) gives the customer back `amount` cents, or everything that
  * remains when `amount` is omitted. Partial refunds add up in `order.refunded` until
  * nothing remains; after that any further refund throws. The input order is never
- * mutated: a new order object is returned.
+ * mutated: a new order object is returned. Orders whose `status` is "cancelled" cannot
+ * be refunded at all; orders without a `status` field are refunded as usual.
  */
 
 export function refund(order, amount) {
+  if (order.status === "cancelled") {
+    throw new Error(`Order ${order.id} is cancelled and cannot be refunded`);
+  }
   const left = remaining(order);
   if (left <= 0) throw new Error(`Order ${order.id} was already refunded`);
 
